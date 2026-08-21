@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中經濟科：市場干預互動圖表 (HKEDBA)</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #0088a3;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --effective-color: #27ae60;
+            --ineffective-color: #c0392b;
+            --tr-area-color: rgba(52, 152, 219, 0.25);
+            --tr-area-stroke: #2980b9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 65px);
+            overflow: hidden;
+        }
+
+        /* 左側 Tab 導航 */
+        .sidebar {
+            width: 220px;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            color: #ecf0f1;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background-color: #34495e;
+        }
+
+        .tab-btn.active {
+            background-color: #1abc9c;
+            border-left-color: #f1c40f;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* 右側內容區 */
+        .content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* 摘要卡片 */
+        .summary-card {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 450px;
+        }
+
+        .summary-card h2 {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 8px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .status-effective { background-color: var(--effective-color); }
+        .status-ineffective { background-color: var(--ineffective-color); }
+
+        .effect-group {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .effect-group h3 {
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .effect-group p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .control-panel {
+            margin-top: auto;
+            background: #eef6f8;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .control-panel label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .control-panel input[type=range] {
+            width: 100%;
+        }
+
+        /* 圖表區域 */
+        .chart-card {
+            flex: 1.5;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            max-width: 550px;
+            max-height: 500px;
+        }
+
+        .axis { stroke: #333; stroke-width: 2; }
+        .grid-line { stroke: #888; stroke-dasharray: 4,4; stroke-width: 1.5; }
+        .curve { stroke-width: 3; fill: none; }
+        .demand { stroke: #d9534f; }
+        .supply { stroke: #0275d8; }
+        .intervention-line { stroke: #f0ad4e; stroke-width: 2.5; stroke-dasharray: 6,3; }
+        .quota-curve { stroke: #f0ad4e; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+        .label { font-size: 15px; font-weight: bold; font-family: sans-serif; }
+        .area-tr { fill: var(--tr-area-color); stroke: var(--tr-area-stroke); stroke-width: 1.5; stroke-dasharray: 2,2; }
+
+        @media (max-width: 900px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+            .tab-btn { flex: 1; text-align: center; white-space: nowrap; border-left: none; border-bottom: 4px solid transparent; }
+            .tab-btn.active { border-left-color: transparent; border-bottom-color: #f1c40f; }
+            .content { flex-direction: column; }
+            .summary-card { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>高中經濟科：中四市場干預（Market Intervention）互動圖表</h1>
+        <p>根據香港教育局《經濟課程及評估指引 (中四至中六)》設計</p>
+    </header>
+
+    <div class="container">
+        <!-- 左側 Tab -->
+        <nav class="sidebar">
+            <button class="tab-btn active" onclick="switchTab('ceiling')">價格上限 (Price Ceiling)</button>
+            <button class="tab-btn" onclick="switchTab('floor')">價格下限 (Price Floor)</button>
+            <button class="tab-btn" onclick="switchTab('quota')">配額 (Quota)</button>
+            <button class="tab-btn" onclick="switchTab('tax')">從量稅 (Per-unit Tax)</button>
+            <button class="tab-btn" onclick="switchTab('subsidy')">從量津貼 (Per-unit Subsidy)</button>
+        </nav>
+
+        <!-- 右側內容區 -->
+        <main class="content">
+            <!-- 摘要與控制區域 -->
+            <div class="summary-card">
+                <h2 id="topic-title">價格上限 (Price Ceiling)</h2>
+                
+                <div>
+                    <span id="status-badge" class="status-badge status-effective">有效干預 (Effective)</span>
+                </div>
+
+                <div class="effect-group">
+                    <h3>價格 (Price, P) 的影響</h3>
+                    <p id="price-effect">--</p>
+                </div>
+
+                <div class="effect-group">
+                    <h3>交易量 (Quantity, Q) 的影響</h3>
+                    <p id="quantity-effect">--</p>
+                </div>
+
+                <div class="effect-group">
+                    <h3>總收入 (Total Revenue) 的影響（藍色陰影面積）</h3>
+                    <p id="tr-effect">--</p>
+                </div>
+
+                <div class="control-panel">
+                    <label id="slider-label" for="param-slider">調整干預位置：</label>
+                    <input type="range" id="param-slider" min="0" max="100" value="30" oninput="updateChart()">
+                </div>
+            </div>
+
+            <!-- 動態 SVG 圖表 -->
+            <div class="chart-card">
+                <svg viewBox="0 0 500 450" id="econ-chart">
+                    <!-- 總收入 / 總支出陰影面積 (TR Area) -->
+                    <g id="tr-shape-group"></g>
+
+                    <!-- 坐標軸 -->
+                    <line x1="50" y1="380" x2="450" y2="380" class="axis" />
+                    <line x1="50" y1="380" x2="50" y2="30" class="axis" />
+                    <text x="460" y="385" class="label">Q</text>
+                    <text x="45" y="20" class="label">P</text>
+                    <text x="35" y="395" class="label">0</text>
+
+                    <!-- 基本供求線 -->
+                    <line id="demand-line" x1="80" y1="60" x2="420" y2="350" class="curve demand" />
+                    <text x="425" y="355" class="label" fill="#d9534f">D</text>
+
+                    <line id="supply-line" x1="80" y1="350" x2="420" y2="60" class="curve supply" />
+                    <text id="supply-label" x="425" y="65" class="label" fill="#0275d8">S</text>
+
+                    <!-- 干預線 (如 P_c, P_f, S' 等) -->
+                    <line id="intervention-line-1" class="intervention-line" />
+                    <path id="quota-path" class="quota-curve" style="display:none;" />
+
+                    <!-- 動態虛線與交點標籤 (P, Q, Sq) -->
+                    <g id="guide-lines"></g>
+                    <g id="chart-labels"></g>
+                </svg>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentTab = 'ceiling';
+
+        const topicData = {
+            ceiling: {
+                title: "價格上限 (Price Ceiling)",
+                sliderLabel: "調整法定最高價格：",
+                defaultVal: 30
+            },
+            floor: {
+                title: "價格下限 (Price Floor)",
+                sliderLabel: "調整法定最低價格：",
+                defaultVal: 70
+            },
+            quota: {
+                title: "配額 (Quota)",
+                sliderLabel: "調整法定配額數量：",
+                defaultVal: 30
+            },
+            tax: {
+                title: "從量稅 (Per-unit Tax)",
+                sliderLabel: "調整每單位稅額：",
+                defaultVal: 40
+            },
+            subsidy: {
+                title: "從量津貼 (Per-unit Subsidy)",
+                sliderLabel: "調整每單位津貼額：",
+                defaultVal: 40
+            }
+        };
+
+        function switchTab(tabKey) {
+            currentTab = tabKey;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const data = topicData[tabKey];
+            document.getElementById('topic-title').innerText = data.title;
+            document.getElementById('slider-label').innerText = data.sliderLabel;
+
+            const slider = document.getElementById('param-slider');
+            slider.value = data.defaultVal;
+
+            updateChart();
+        }
+
+        function updateChart() {
+            const val = parseFloat(document.getElementById('param-slider').value);
+            const trGroup = document.getElementById('tr-shape-group');
+            const guideGroup = document.getElementById('guide-lines');
+            const labelsGroup = document.getElementById('chart-labels');
+            const l1 = document.getElementById('intervention-line-1');
+            const qPath = document.getElementById('quota-path');
+            
+            trGroup.innerHTML = '';
+            guideGroup.innerHTML = '';
+            labelsGroup.innerHTML = '';
+            l1.style.display = 'none';
+            qPath.style.display = 'none';
+
+            // 原均衡點 (E₀): (250, 205), 原價格 Y=205, 原數量 X=250
+            const P0_y = 205;
+            const Q0_x = 250;
+
+            // 繪製原均衡 P₀ 與 Q₀ 參考虛線
+            addGuideLine(50, P0_y, Q0_x, P0_y);
+            addGuideLine(Q0_x, P0_y, Q0_x, 380);
+            addText(25, P0_y + 5, "P₀");
+            addText(Q0_x - 10, 400, "Q₀");
+
+            if (currentTab === 'ceiling') {
+                let Pc_y = 105 + (val * 2.05);
+                showInterventionLine(l1, 50, Pc_y, 420, Pc_y);
+
+                if (Pc_y > P0_y + 2) { 
+                    setEffective(true);
+                    // 價格上限：實際交易量由供應曲線上的數量 Qs 決定
+                    let Qs_x = 250 - (Pc_y - P0_y);
+                    addGuideLine(50, Pc_y, Qs_x, Pc_y);
+                    addGuideLine(Qs_x, Pc_y, Qs_x, 380);
+                    addText(20, Pc_y + 5, "P");
+                    addText(Qs_x - 10, 400, "Q");
+
+                    addTRRect(50, Pc_y, Qs_x - 50, 380 - Pc_y);
+
+                    document.getElementById('price-effect').innerText = "市場價格由 P₀ 下降至價格上限 P。";
+                    document.getElementById('quantity-effect').innerText = "交易量由 Q₀ 減少至 Q（出現短缺 Shortage）。";
+                    document.getElementById('tr-effect').innerText = "總收入由 (P₀ × Q₀) 減少至 (P × Q)（藍色陰影面積）。";
+                } else {
+                    setEffective(false);
+                    addTRRect(50, P0_y, Q0_x - 50, 380 - P0_y);
+
+                    document.getElementById('price-effect').innerText = "價格上限高於/等於均衡價格，對市場沒有約束力，價格維持在 P₀。";
+                    document.getElementById('quantity-effect').innerText = "交易量維持在均衡數量 Q₀。";
+                    document.getElementById('tr-effect').innerText = "總收入維持在原均衡面積 (P₀ × Q₀) 不變。";
+                }
+
+            } else if (currentTab === 'floor') {
+                let Pf_y = 305 - (val * 2.05);
+                showInterventionLine(l1, 50, Pf_y, 420, Pf_y);
+
+                if (Pf_y < P0_y - 2) { 
+                    setEffective(true);
+                    // 價格下限：實際交易量落在需求曲線 D 上的買家需求點
+                    let Qd_x = 250 - (P0_y - Pf_y);
+                    addGuideLine(50, Pf_y, Qd_x, Pf_y);
+                    addGuideLine(Qd_x, Pf_y, Qd_x, 380);
+                    addText(20, Pf_y + 5, "P");
+                    addText(Qd_x - 10, 400, "Q");
+
+                    addTRRect(50, Pf_y, Qd_x - 50, 380 - Pf_y);
+
+                    document.getElementById('price-effect').innerText = "市場價格由 P₀ 上升至價格下限 P。";
+                    document.getElementById('quantity-effect').innerText = "交易量由 Q₀ 減少至 Q（出現過剩 Surplus）。";
+                    document.getElementById('tr-effect').innerText = "總收入由 (P₀ × Q₀) 變為 (P × Q)（藍色陰影面積）。價格上升但交易量減少，總收入變化視乎需求彈性。";
+                } else {
+                    setEffective(false);
+                    addTRRect(50, P0_y, Q0_x - 50, 380 - P0_y);
+
+                    document.getElementById('price-effect').innerText = "價格下限低於/等於均衡價格，對市場沒有約束力，價格維持在 P₀。";
+                    document.getElementById('quantity-effect').innerText = "交易量維持在均衡數量 Q₀。";
+                    document.getElementById('tr-effect').innerText = "總收入維持在原均衡面積 (P₀ × Q₀) 不變。";
+                }
+
+            } else if (currentTab === 'quota') {
+                let Qq_x = 350 - (val * 2.0);
+                
+                // 計算原供應曲線 S 在配額數量 Qq 處的 Y 坐標 (原 S 方程: Y = 350 - (X - 80)*(290/340))
+                let P_s_intersect_y = 350 - (Qq_x - 80) * (290 / 340);
+
+                if (Qq_x < Q0_x - 2) { 
+                    setEffective(true);
+                    
+                    // 配額有效時繪製黃色折線 Sq：由 (80, 350) 沿著原 S 精確延伸至 (Qq_x, P_s_intersect_y)，然後垂直向上至 Y=40
+                    qPath.setAttribute('d', `M 80 350 L ${Qq_x} ${P_s_intersect_y} L ${Qq_x} 40`);
+                    qPath.style.display = 'block';
+
+                    // 需求曲線與配額垂直線交點之價格 P
+                    let Pq_y = P0_y - (Q0_x - Qq_x); 
+
+                    addGuideLine(50, Pq_y, Qq_x, Pq_y);
+                    addGuideLine(Qq_x, Pq_y, Qq_x, 380);
+                    addText(20, Pq_y + 5, "P");
+                    addText(Qq_x - 10, 400, "Q");
+                    
+                    // 精準標示「Sq」於黃色折曲供應曲線頂端上方
+                    addText(Qq_x + 8, 45, "Sq", "#f0ad4e");
+
+                    addTRRect(50, Pq_y, Qq_x - 50, 380 - Pq_y);
+
+                    document.getElementById('price-effect').innerText = "由於限制了最大供應量，配額供應曲線變為 Sq。市場價格由 P₀ 上升至 P。";
+                    document.getElementById('quantity-effect').innerText = "交易量由 Q₀ 強制減少至配額水平 Q。";
+                    document.getElementById('tr-effect').innerText = "總收入由 (P₀ × Q₀) 變為 (P × Q)（藍色陰影面積）。";
+                } else {
+                    setEffective(false);
+                    qPath.style.display = 'none';
+
+                    addTRRect(50, P0_y, Q0_x - 50, 380 - P0_y);
+
+                    document.getElementById('price-effect').innerText = "配額數量大於/等於均衡數量，對市場沒有約束力，價格維持在 P₀。";
+                    document.getElementById('quantity-effect').innerText = "交易量維持在均衡數量 Q₀。";
+                    document.getElementById('tr-effect').innerText = "總收入維持在原均衡面積 (P₀ × Q₀) 不變。";
+                }
+
+            } else if (currentTab === 'tax') {
+                let shift = val * 1.2;
+                if (shift > 2) {
+                    setEffective(true);
+                    let Qt_x = Q0_x - shift / 2;
+                    let Pt_y = P0_y - shift / 2;
+
+                    showInterventionLine(l1, 80, 350 - shift, 420, 60 - shift, false);
+                    addText(425, 65 - shift, "S'", "#f0ad4e");
+
+                    addGuideLine(50, Pt_y, Qt_x, Pt_y);
+                    addGuideLine(Qt_x, Pt_y, Qt_x, 380);
+                    addText(20, Pt_y + 5, "P");
+                    addText(Qt_x - 10, 400, "Q");
+
+                    addTRRect(50, Pt_y, Qt_x - 50, 380 - Pt_y);
+
+                    document.getElementById('price-effect').innerText = "供應曲線向左（向上）平行移動至 S'。買家支付價格由 P₀ 上升至 P。";
+                    document.getElementById('quantity-effect').innerText = "交易量由 Q₀ 減少至 Q。";
+                    document.getElementById('tr-effect').innerText = "買家總支出由 (P₀ × Q₀) 變為 (P × Q)（藍色陰影面積）。";
+                } else {
+                    setEffective(false);
+                    addTRRect(50, P0_y, Q0_x - 50, 380 - P0_y);
+
+                    document.getElementById('price-effect').innerText = "未有徵收稅項（稅額為 0），價格維持在 P₀。";
+                    document.getElementById('quantity-effect').innerText = "交易量維持在 Q₀。";
+                    document.getElementById('tr-effect').innerText = "總收入維持在 (P₀ × Q₀)。";
+                }
+
+            } else if (currentTab === 'subsidy') {
+                let shift = val * 1.2;
+                if (shift > 2) {
+                    setEffective(true);
+                    let Qsub_x = Q0_x + shift / 2;
+                    let Ps_y = P0_y + shift / 2;
+
+                    showInterventionLine(l1, 80, 350 + shift, 420, 60 + shift, false);
+                    addText(425, 65 + shift, "S'", "#f0ad4e");
+
+                    addGuideLine(50, Ps_y, Qsub_x, Ps_y);
+                    addGuideLine(Qsub_x, Ps_y, Qsub_x, 380);
+                    addText(20, Ps_y + 5, "P");
+                    addText(Qsub_x - 10, 400, "Q");
+
+                    addTRRect(50, Ps_y, Qsub_x - 50, 380 - Ps_y);
+
+                    document.getElementById('price-effect').innerText = "供應曲線向右（向下）平行移動至 S'。買家支付價格由 P₀ 下降至 P。";
+                    document.getElementById('quantity-effect').innerText = "交易量由 Q₀ 增加至 Q。";
+                    document.getElementById('tr-effect').innerText = "買家總支出變為 (P × Q)（藍色陰影面積）。";
+                } else {
+                    setEffective(false);
+                    addTRRect(50, P0_y, Q0_x - 50, 380 - P0_y);
+
+                    document.getElementById('price-effect').innerText = "未有提供津貼（津貼額為 0），價格維持在 P₀。";
+                    document.getElementById('quantity-effect').innerText = "交易量維持在 Q₀。";
+                    document.getElementById('tr-effect').innerText = "總收入維持在 (P₀ × Q₀)。";
+                }
+            }
+        }
+
+        function setEffective(isEffective) {
+            const badge = document.getElementById('status-badge');
+            if (isEffective) {
+                badge.className = 'status-badge status-effective';
+                badge.innerText = '有效干預 (Effective)';
+            } else {
+                badge.className = 'status-badge status-ineffective';
+                badge.innerText = '無效干預 (Ineffective)';
+            }
+        }
+
+        function showInterventionLine(lineElem, x1, y1, x2, y2, dashed = true) {
+            lineElem.setAttribute('x1', x1);
+            lineElem.setAttribute('y1', y1);
+            lineElem.setAttribute('x2', x2);
+            lineElem.setAttribute('y2', y2);
+            lineElem.style.display = 'block';
+            if(!dashed) lineElem.style.strokeDasharray = 'none';
+            else lineElem.style.strokeDasharray = '6,3';
+        }
+
+        function addGuideLine(x1, y1, x2, y2) {
+            const g = document.getElementById('guide-lines');
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('class', 'grid-line');
+            g.appendChild(line);
+        }
+
+        function addText(x, y, textContent, color = '#333') {
+            const g = document.getElementById('chart-labels');
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x);
+            text.setAttribute('y', y);
+            text.setAttribute('class', 'label');
+            text.setAttribute('fill', color);
+            text.textContent = textContent;
+            g.appendChild(text);
+        }
+
+        function addTRRect(x, y, width, height) {
+            const g = document.getElementById('tr-shape-group');
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', x);
+            rect.setAttribute('y', y);
+            rect.setAttribute('width', width);
+            rect.setAttribute('height', height);
+            rect.setAttribute('class', 'area-tr');
+            g.appendChild(rect);
+        }
+
+        // 初始化
+        switchTab('ceiling');
+    </script>
+</body>
+</html>
